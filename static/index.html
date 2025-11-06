@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tronco-IA 🌳 - Assistente Pessoal Inteligente</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>🌳 Tronco-IA</h1>
+                <p class="subtitle">Seu Assistente Pessoal Inteligente</p>
+            </div>
+            <div class="header-actions">
+                <select id="providerSelect" class="provider-select">
+                    <option value="">Carregando...</option>
+                </select>
+                <button class="btn btn-secondary" onclick="showTab('notes')">📝 Notas</button>
+                <button class="btn btn-secondary" onclick="showTab('docs')">📚 Documentos</button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Chat Tab -->
+            <div id="chatTab" class="tab-content active">
+                <div class="chat-container">
+                    <div id="chatMessages" class="chat-messages">
+                        <div class="welcome-message">
+                            <h2>👋 Olá! Como posso ajudar?</h2>
+                            <p>Faça perguntas, envie documentos ou crie notas para enriquecer nossas conversas.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-container">
+                        <textarea 
+                            id="messageInput" 
+                            class="message-input" 
+                            placeholder="Digite sua mensagem aqui..."
+                            rows="3"
+                        ></textarea>
+                        <div class="input-actions">
+                            <label class="btn btn-secondary file-upload-btn">
+                                📎 Upload
+                                <input type="file" id="fileInput" accept=".pdf,.txt,.md" style="display: none;">
+                            </label>
+                            <button id="sendButton" class="btn btn-primary" onclick="sendMessage()">
+                                Enviar 🚀
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes Tab -->
+            <div id="notesTab" class="tab-content">
+                <div class="notes-container">
+                    <div class="notes-header">
+                        <h2>📝 Minhas Notas</h2>
+                        <button class="btn btn-primary" onclick="showNoteEditor()">+ Nova Nota</button>
+                    </div>
+                    
+                    <div id="noteEditor" class="note-editor" style="display: none;">
+                        <input type="text" id="noteTitle" class="note-title-input" placeholder="Título da nota">
+                        <textarea id="noteContent" class="note-content-input" placeholder="Conteúdo da nota" rows="10"></textarea>
+                        <input type="text" id="noteTags" class="note-tags-input" placeholder="Tags (separadas por vírgula)">
+                        <div class="note-actions">
+                            <button class="btn btn-secondary" onclick="cancelNoteEdit()">Cancelar</button>
+                            <button class="btn btn-primary" onclick="saveNote()">Salvar</button>
+                        </div>
+                    </div>
+                    
+                    <div id="notesList" class="notes-list">
+                        <!-- Notas serão carregadas aqui -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documents Tab -->
+            <div id="docsTab" class="tab-content">
+                <div class="docs-container">
+                    <div class="docs-header">
+                        <h2>📚 Meus Documentos</h2>
+                        <label class="btn btn-primary">
+                            + Upload Documento
+                            <input type="file" id="docFileInput" accept=".pdf,.txt,.md" style="display: none;" onchange="uploadDocument(this)">
+                        </label>
+                    </div>
+                    
+                    <div id="docsList" class="docs-list">
+                        <!-- Documentos serão carregados aqui -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p>Processando...</p>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

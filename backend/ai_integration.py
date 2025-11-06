@@ -209,7 +209,7 @@ class AIIntegration:
         Args:
             provider_name: Nome do provider (openai, gemini, ollama)
             messages: Lista de mensagens
-            model: Modelo específico (opcional)
+            model: Modelo específico (opcional, usa variável de ambiente ou padrão)
             
         Returns:
             Resposta da IA
@@ -220,12 +220,17 @@ class AIIntegration:
         
         # Define modelos padrão se não especificado
         if model is None:
-            default_models = {
-                "openai": "gpt-3.5-turbo",
-                "gemini": "gemini-pro",
-                "ollama": "llama2"
-            }
-            model = default_models.get(provider_name, "")
+            # Tenta pegar do ambiente primeiro
+            model = os.getenv(f"{provider_name.upper()}_DEFAULT_MODEL")
+            
+            # Se não houver no ambiente, usa padrões conhecidos
+            if not model:
+                default_models = {
+                    "openai": "gpt-3.5-turbo",
+                    "gemini": "gemini-pro",
+                    "ollama": "llama2"
+                }
+                model = default_models.get(provider_name, "")
         
         return await provider.chat(messages, model)
     

@@ -22,6 +22,7 @@ if [ ! -d "venv" ]; then
     source venv/bin/activate
     pip install -r requirements.txt
 else
+    echo "✅ Ativando ambiente virtual..."
     source venv/bin/activate
 fi
 

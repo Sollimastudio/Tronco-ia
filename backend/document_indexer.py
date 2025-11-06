@@ -6,7 +6,7 @@ Extrai texto de PDFs, TXT, MD e outros formatos.
 import os
 from typing import Optional
 from pathlib import Path
-import PyPDF2
+import pypdf
 from loguru import logger
 
 
@@ -63,7 +63,7 @@ class DocumentIndexer:
         text = ""
         try:
             with open(filepath, 'rb') as file:
-                pdf_reader = PyPDF2.PdfReader(file)
+                pdf_reader = pypdf.PdfReader(file)
                 for page in pdf_reader.pages:
                     text += page.extract_text() + "\n"
             logger.info(f"PDF processado com sucesso: {filepath}")

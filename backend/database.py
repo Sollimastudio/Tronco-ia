@@ -80,17 +80,20 @@ class Database:
         
         logger.info("Banco de dados inicializado com sucesso")
     
-    async def create_conversation(self, title: str = "Nova Conversa", model: str = "gemini") -> int:
+    async def create_conversation(self, title: str = "Nova Conversa", model: str = None) -> int:
         """
         Cria uma nova conversa.
         
         Args:
             title: Título da conversa
-            model: Modelo de IA usado
+            model: Modelo de IA usado (usa variável de ambiente se não especificado)
             
         Returns:
             ID da conversa criada
         """
+        if model is None:
+            model = os.getenv("DEFAULT_AI_MODEL", "gemini")
+        
         async with aiosqlite.connect(self.db_path) as db:
             cursor = await db.execute(
                 "INSERT INTO conversations (title, model) VALUES (?, ?)",

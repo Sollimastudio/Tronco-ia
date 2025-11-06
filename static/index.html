@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tronco-IA - Assistente Pessoal</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🌳 Tronco-IA</h1>
+            <p class="subtitle">Seu Assistente Pessoal Inteligente</p>
+            <div class="status-bar">
+                <span id="status-indicator" class="status-indicator">●</span>
+                <span id="status-text">Verificando status...</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <h3>📚 Documentos</h3>
+                    <div class="upload-area">
+                        <input type="file" id="file-input" accept=".pdf,.txt,.md" style="display: none;">
+                        <button class="btn btn-upload" onclick="document.getElementById('file-input').click()">
+                            Enviar Documento
+                        </button>
+                    </div>
+                    <div id="documents-list" class="documents-list">
+                        <p class="loading">Carregando documentos...</p>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>💬 Conversas</h3>
+                    <button class="btn btn-new" onclick="startNewConversation()">Nova Conversa</button>
+                    <div id="conversations-list" class="conversations-list">
+                        <p class="loading">Carregando conversas...</p>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>📝 Notas</h3>
+                    <button class="btn btn-new" onclick="showNoteModal()">Nova Nota</button>
+                    <div id="notes-list" class="notes-list">
+                        <p class="loading">Carregando notas...</p>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Chat Area -->
+            <main class="chat-area">
+                <div id="chat-messages" class="chat-messages">
+                    <div class="welcome-message">
+                        <h2>Bem-vindo ao Tronco-IA! 👋</h2>
+                        <p>Faça perguntas, envie documentos para análise ou crie notas.</p>
+                        <div class="features">
+                            <div class="feature">
+                                <span class="feature-icon">🤖</span>
+                                <span>Chat com IA</span>
+                            </div>
+                            <div class="feature">
+                                <span class="feature-icon">📄</span>
+                                <span>Análise de Documentos</span>
+                            </div>
+                            <div class="feature">
+                                <span class="feature-icon">🧠</span>
+                                <span>Memória Persistente</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input-area">
+                    <div class="context-toggle">
+                        <label>
+                            <input type="checkbox" id="use-context" checked>
+                            Usar contexto dos documentos
+                        </label>
+                    </div>
+                    <div class="input-wrapper">
+                        <textarea 
+                            id="chat-input" 
+                            placeholder="Digite sua mensagem..."
+                            rows="3"
+                        ></textarea>
+                        <button id="send-button" class="btn btn-send" onclick="sendMessage()">
+                            Enviar
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Note Modal -->
+    <div id="note-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeNoteModal()">&times;</span>
+            <h2>Nova Nota</h2>
+            <form id="note-form" onsubmit="saveNote(event)">
+                <div class="form-group">
+                    <label for="note-title">Título:</label>
+                    <input type="text" id="note-title" required>
+                </div>
+                <div class="form-group">
+                    <label for="note-content">Conteúdo:</label>
+                    <textarea id="note-content" rows="10" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="note-tags">Tags (separadas por vírgula):</label>
+                    <input type="text" id="note-tags">
+                </div>
+                <button type="submit" class="btn btn-primary">Salvar Nota</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

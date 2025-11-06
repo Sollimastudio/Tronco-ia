@@ -4,8 +4,8 @@ from typing import List, Dict, Optional
 from pathlib import Path
 import PyPDF2
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import Chroma
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import Chroma
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from models import Document

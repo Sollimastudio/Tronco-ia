@@ -194,8 +194,8 @@ async function loadDocuments() {
         listDiv.innerHTML = documents.map(doc => `
             <div class="list-item">
                 <div class="list-item-title">
-                    📄 ${doc.filename}
-                    <span class="status-badge ${doc.status}">${doc.status}</span>
+                    📄 ${escapeHtml(doc.filename)}
+                    <span class="status-badge ${escapeHtml(doc.status)}">${escapeHtml(doc.status)}</span>
                 </div>
                 <div class="list-item-meta">
                     ${doc.total_chunks} chunks | ${new Date(doc.uploaded_at).toLocaleDateString('pt-BR')}
@@ -260,7 +260,7 @@ async function loadConversations() {
         
         listDiv.innerHTML = conversations.map(conv => `
             <div class="list-item" onclick="loadConversation(${conv.id})">
-                <div class="list-item-title">💬 ${conv.title}</div>
+                <div class="list-item-title">💬 ${escapeHtml(conv.title)}</div>
                 <div class="list-item-meta">
                     ${new Date(conv.updated_at).toLocaleDateString('pt-BR')}
                 </div>
@@ -304,9 +304,9 @@ async function loadNotes() {
         
         listDiv.innerHTML = notes.map(note => `
             <div class="list-item">
-                <div class="list-item-title">📝 ${note.title}</div>
+                <div class="list-item-title">📝 ${escapeHtml(note.title)}</div>
                 <div class="list-item-meta">
-                    ${note.tags || 'Sem tags'} | ${new Date(note.created_at).toLocaleDateString('pt-BR')}
+                    ${escapeHtml(note.tags || 'Sem tags')} | ${new Date(note.created_at).toLocaleDateString('pt-BR')}
                 </div>
             </div>
         `).join('');

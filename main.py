@@ -26,9 +26,11 @@ app = FastAPI(
 )
 
 # Configura CORS
+# ATENÇÃO: Para produção, configure origins específicas ao invés de "*"
+# Exemplo: allow_origins=["https://seu-dominio.com"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Para desenvolvimento. Restringir em produção!
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -90,6 +92,7 @@ class NoteResponse(BaseModel):
 
 
 # Eventos de inicialização
+# Nota: Para FastAPI 0.104+, use lifespan context manager para novas aplicações
 @app.on_event("startup")
 async def startup_event():
     """Inicializa banco de dados na inicialização"""

@@ -6,7 +6,7 @@ Modulo oficial de video do Tronco IA.
 
 Transformar video bruto, audio, transcricao ou briefing em um plano de edicao altamente acionavel para conteudos curtos, UGC, videos de venda, autoridade, stories e cortes virais.
 
-O agente nao deve prometer magia. Ele deve entregar uma decisao editorial precisa: o que cortar, onde cortar, o que manter, que texto colocar na tela, qual ritmo usar, qual CTA aplicar e como exportar.
+O agente nao promete viralizacao garantida. Ele aumenta a probabilidade de retencao, replay, comentario, salvamento, clique e conversao com decisao editorial precisa: o que cortar, onde cortar, o que manter, que texto colocar na tela, qual ritmo usar, qual CTA aplicar e como exportar.
 
 ## Fluxo do usuario
 
@@ -15,16 +15,21 @@ O agente nao deve prometer magia. Ele deve entregar uma decisao editorial precis
 3. Sistema cria um projeto de video.
 4. Pipeline extrai audio e transcreve com timestamps.
 5. Agente avalia gancho, clareza, emocao, autoridade, ritmo e conversao.
-6. Agente gera:
-   - diagnostico;
-   - mapa de cortes;
-   - roteiro de edicao;
-   - textos de tela;
-   - legendas;
-   - CTA;
-   - b-roll;
-   - design sonoro;
-   - checklist para CapCut, Premiere, Canva ou editor humano.
+6. Agente gera diagnostico, mapa de cortes, roteiro de edicao, textos de tela, legendas, CTA, b-roll, design sonoro e checklist.
+
+## Motores profissionais adicionados
+
+- `retention-score.ts`: avalia trechos por potencial de retencao e recomenda manter, cortar, apertar ou mover para o gancho.
+- `viral-score.ts`: calcula score de gancho, retencao, clareza, emocao, pressao de venda, autoridade e nota geral.
+- `hook-generator.ts`: cria variacoes de gancho por ameaca, identificacao, autoridade, storytelling, venda indireta, comentario, salvamento e polemica.
+- `cut-map-generator.ts`: transforma segmentos de transcricao em mapa de cortes com acao, motivo, texto na tela, b-roll e som.
+- `caption-engine.ts`: cria pacotes de legenda fiel, retencao, minimalista, agressiva e premium, alem de SRT simples.
+- `broll-engine.ts`: sugere b-roll coerente com nicho, emocao, produto e estetica premium.
+- `sound-design-engine.ts`: sugere pausas, impacto grave, queda de trilha e trilha baixa para reforcar frases fortes.
+- `offer-bridge.ts`: cria pontes naturais entre dor, consciencia e oferta sem parecer mendigancia digital.
+- `exporters.ts`: exporta analise em Markdown, JSON e checklists para CapCut/Premiere.
+- `post-performance-analyzer.ts`: analisa metricas publicadas e sugere o que repetir, corrigir e testar.
+- `index.ts`: centraliza os exports do modulo.
 
 ## MVP implementado
 
@@ -34,6 +39,7 @@ O agente nao deve prometer magia. Ele deve entregar uma decisao editorial precis
 - Campos de transcricao, publico, objetivo e oferta.
 - Tipos de dominio do agente.
 - Prompt-mestre do agente de video.
+- Motores de retencao, viralizacao, cortes, legenda, b-roll, som, oferta, exportacao e pos-publicacao.
 
 ## Proximas implementacoes tecnicas
 
@@ -72,13 +78,16 @@ Usar o prompt de `src/core/video-agent/prompt.ts` com o modelo de IA.
 
 O resultado deve preencher o contrato de `VideoAnalysisResult`.
 
-### 5. Exportacao
+### 5. Exportacao avancada
 
 Gerar:
 
 - JSON do plano;
 - Markdown do roteiro de edicao;
 - TXT para editor humano;
+- SRT para legendas;
+- pacote de checklist para CapCut;
+- pacote de checklist para Premiere;
 - opcional: EDL/XML para Premiere/DaVinci em versao futura.
 
 ## Regra de qualidade do agente

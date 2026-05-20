@@ -1,3 +1,5 @@
+import type { ApprovedVault } from './approvedVault';
+
 export interface ProjectMemory {
   id: string;
   name: string;
@@ -11,6 +13,7 @@ export interface ProjectMemory {
   attachedFiles: Array<{ name: string; type: string; status: string }>;
   generatedOutputs: Array<{ name: string; type: string; path?: string }>;
   nextSteps: string[];
+  approvedVault: ApprovedVault;
 }
 
 export const emptyProjectMemory: ProjectMemory = {
@@ -19,5 +22,9 @@ export const emptyProjectMemory: ProjectMemory = {
   approvedDecisions: [],
   attachedFiles: [],
   generatedOutputs: [],
-  nextSteps: ['entrevista_guiada']
+  nextSteps: ['entrevista_guiada'],
+  approvedVault: {
+    projectId: 'draft',
+    items: []
+  }
 };

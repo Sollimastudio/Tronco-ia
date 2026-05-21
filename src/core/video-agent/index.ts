@@ -10,3 +10,5 @@ export * from './sound-design-engine';
 export * from './offer-bridge';
 export * from './exporters';
 export * from './post-performance-analyzer';
+export * from './editor-types';
+export * from './editor-command-engine';

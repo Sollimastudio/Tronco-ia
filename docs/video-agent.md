@@ -31,7 +31,32 @@ O agente nao promete viralizacao garantida. Ele aumenta a probabilidade de reten
 - `post-performance-analyzer.ts`: analisa metricas publicadas e sugere o que repetir, corrigir e testar.
 - `editor-types.ts`: define editores suportados e entrada de comandos multi-editor.
 - `editor-command-engine.ts`: traduz estrategia de edicao para CapCut, Canva e Premiere.
+- `src/core/media/ffmpeg.ts`: modulo migrado do `videoup_app` para processamento real de midia.
 - `index.ts`: centraliza os exports do modulo.
+
+## Modulo de midia migrado
+
+O repositorio `videoup_app` foi identificado como doador tecnico de video e audio. O arquivo `server/_core/ffmpeg.ts` foi migrado para o Tronco IA em:
+
+`src/core/media/ffmpeg.ts`
+
+Funcoes ja salvas no Tronco:
+
+- `getVideoInfo`: le metadados do video com ffprobe.
+- `extractAudio`: extrai audio em MP3 mono 16kHz para transcricao.
+- `trimVideo`: corta video por tempo inicial e duracao.
+- `concatVideos`: junta clipes em um arquivo final.
+- `addSubtitles`: aplica legenda ASS no video.
+- `addBackgroundMusic`: mistura musica de fundo com o audio original.
+
+Dependencias adicionadas:
+
+- `ffmpeg-static`;
+- `ffprobe-static`;
+- `fluent-ffmpeg`;
+- `@types/fluent-ffmpeg`.
+
+Regra: este modulo fica isolado ate que upload, transcricao e exportacao sejam integrados com seguranca.
 
 ## Atualizacao multi-editor
 
@@ -95,6 +120,8 @@ O Motion deve solicitar ao Maestro um plano sonoro quando o video tiver mapa de 
 - Prompt-mestre do agente de video.
 - Motores de retencao, viralizacao, cortes, legenda, b-roll, som, oferta, exportacao e pos-publicacao.
 - Comandos iniciais multi-editor para CapCut, Canva e Premiere.
+- Inventario de salvamento do GitHub em `docs/github-inventory-salvage-plan.md`.
+- Modulo FFmpeg migrado para `src/core/media/ffmpeg.ts`.
 
 ## Proximas implementacoes tecnicas
 
@@ -109,7 +136,7 @@ Sugestao:
 
 ### 2. Extracao de audio
 
-Usar FFmpeg para extrair o audio do video.
+Usar o modulo migrado `src/core/media/ffmpeg.ts` para extrair o audio do video.
 
 Saida esperada:
 
@@ -156,6 +183,28 @@ Criar ponte tecnica com Maestro Viral Lab para receber mapa de cortes e devolver
 - timeline sonora;
 - comandos de audio por editor;
 - sugestao de sound logo ou jingle.
+
+### 7. Visual Style Autopilot
+
+Criar modulo para receber print, video ou referencia visual e detectar automaticamente o estilo de edicao.
+
+Primeiro estilo obrigatorio:
+
+- Objeto-Orbita / Floating Product Collage.
+
+Saida esperada:
+
+- estilo detectado;
+- por que prende o scroll;
+- assets necessarios;
+- plano de cena;
+- comandos CapCut;
+- comandos Canva;
+- comandos Premiere/After Effects;
+- plano sonoro;
+- checklist final.
+
+Regra: o usuario nao cola prompt. O agente cria prompt interno e entrega plano executavel.
 
 ## Regra de qualidade do agente
 

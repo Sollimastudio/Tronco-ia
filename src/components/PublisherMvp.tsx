@@ -75,18 +75,35 @@ export function PublisherMvp() {
     if (!file) return;
 
     setAttachedFileName(file.name);
-    const extension = file.name.split(".").pop()?.toLowerCase();
+    setSourceSummary("Processando arquivo...");
 
-    if (extension === "txt" || extension === "md") {
-      const text = await file.text();
-      setSourceSummary(text.slice(0, 8000));
-      return;
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch("/api/publisher/upload", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setSourceSummary(data.error || "Falha ao processar arquivo.");
+        return;
+      }
+
+      setSourceSummary(
+        data.text ||
+          `Arquivo anexado: ${file.name}. Não foi possível extrair conteúdo.`
+      );
+    } catch (error) {
+      setSourceSummary(
+        error instanceof Error
+          ? `Erro ao processar arquivo: ${error.message}`
+          : "Erro ao processar arquivo."
+      );
     }
-
-    setSourceSummary((current) =>
-      current ||
-      `Arquivo anexado: ${file.name}. A leitura completa de PDF/DOCX será processada na próxima fase do backend.`
-    );
   }
 
   function createMemory() {

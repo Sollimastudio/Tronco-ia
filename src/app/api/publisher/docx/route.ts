@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { renderArtifactDocxBuffer } from '../../../../../core/publisher/docxRenderer';
+import { renderArtifactDocxBuffer } from '../../../../core/publisher/docxRenderer';
 
 function safeFileName(value: string) {
   return (value || 'publisher-project')

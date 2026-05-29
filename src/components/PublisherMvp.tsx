@@ -16,11 +16,25 @@ type Memory = {
 };
 
 type Diagnosis = {
+  title: string;
   promise: string;
-  structure: string[];
+  recommendedFormat: string;
+  strengths: string[];
+  gaps: string[];
   visualNeeds: string[];
-  risks: string[];
-  nextActions: string[];
+  nextStep: string;
+};
+
+type Artifact = {
+  productTitle: string;
+  promise: string;
+  audience: string;
+  tone: string;
+  visualStyle: string;
+  finalFormats: string[];
+  editorialStructure: string[];
+  didacticAssets: string[];
+  exportPlan: string[];
 };
 
 const visualStyles = [
@@ -47,6 +61,7 @@ export function PublisherMvp() {
   const [attachedFileName, setAttachedFileName] = useState("");
   const [memory, setMemory] = useState<Memory | null>(null);
   const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
+  const [artifact, setArtifact] = useState<Artifact | null>(null);
 
   function toggleFormat(format: string) {
     setFormats((current) =>
@@ -60,18 +75,17 @@ export function PublisherMvp() {
     if (!file) return;
 
     setAttachedFileName(file.name);
-
     const extension = file.name.split(".").pop()?.toLowerCase();
 
     if (extension === "txt" || extension === "md") {
       const text = await file.text();
-      setSourceSummary(text.slice(0, 6000));
+      setSourceSummary(text.slice(0, 8000));
       return;
     }
 
     setSourceSummary((current) =>
       current ||
-      `Arquivo anexado: ${file.name}. Leitura completa de PDF/DOCX será processada na próxima fase do backend.`
+      `Arquivo anexado: ${file.name}. A leitura completa de PDF/DOCX será processada na próxima fase do backend.`
     );
   }
 
@@ -91,40 +105,83 @@ export function PublisherMvp() {
 
     setMemory(created);
     setDiagnosis(null);
+    setArtifact(null);
   }
 
   function createDiagnosis() {
     const created: Diagnosis = {
+      title: "Diagnóstico Editorial Inicial",
       promise: goal
-        ? `Transformar o material em um produto editorial premium para ${audience || "o público definido"}.`
-        : "Definir promessa central antes da escrita final.",
-      structure: [
-        "Entrada editorial: promessa, público, transformação e tom.",
-        "Arquitetura do conteúdo: módulos, capítulos e ordem de leitura.",
-        "Didática visual: boxes, mapas mentais, infográficos e exercícios.",
-        "Entrega final: HTML, DOCX, PDF e pacote organizado."
+        ? `Transformar "${projectName || "este projeto"}" em um produto editorial premium para ${audience || "o público definido"}, com foco em ${goal}.`
+        : "A promessa central ainda precisa ser refinada antes da produção final.",
+      recommendedFormat: formats.join(" + "),
+      strengths: [
+        "Existe uma intenção clara de transformação.",
+        "O público já foi definido.",
+        "O formato final já começou a ser escolhido.",
+        "O tema visual dá direção para a diagramação."
+      ],
+      gaps: [
+        "Ainda falta definir a arquitetura completa de capítulos/módulos.",
+        "Ainda falta mapear onde entrarão infográficos, mapas mentais e exercícios.",
+        "Ainda falta transformar o material bruto em sequência editorial paginada.",
+        "PDF e DOCX finais exigem motor de exportação na próxima etapa."
       ],
       visualNeeds: [
-        `Tema visual sugerido: ${visualStyle || "escolher tema visual antes da diagramação"}.`,
-        "Criar capa, página de abertura e separadores de módulos.",
-        "Inserir blocos de destaque para conceitos importantes.",
-        "Prever pelo menos um mapa mental e um infográfico para facilitar retenção."
+        "Capa editorial premium.",
+        "Página de abertura com promessa central.",
+        "Separadores de módulos.",
+        "Boxes de conceito-chave.",
+        "Mapa mental para visão geral do método.",
+        "Infográfico para explicar a transformação prometida.",
+        "Páginas práticas para exercícios/checklists."
       ],
-      risks: [
-        "Material pode ficar genérico se a promessa não for específica.",
-        "PDF pode ficar pesado se não houver respiro visual.",
-        "DOCX precisa ser editável e organizado em estilos."
-      ],
-      nextActions: [
-        "Aprovar memória do projeto.",
-        "Aprovar diagnóstico editorial.",
-        "Gerar Artefato Editorial.",
-        "Montar HTML/WebBook.",
-        "Exportar DOCX/PDF."
-      ]
+      nextStep: "approve_to_artifact"
     };
 
     setDiagnosis(created);
+    setArtifact(null);
+  }
+
+  function approveToArtifact() {
+    if (!memory || !diagnosis) return;
+
+    const created: Artifact = {
+      productTitle: memory.projectName || "Produto Editorial Sem Título",
+      promise: diagnosis.promise,
+      audience: memory.audience,
+      tone: memory.tone || "sofisticado, claro e útil",
+      visualStyle: memory.visualStyle || "Luxo editorial — bordô, creme, dourado",
+      finalFormats: memory.finalFormats,
+      editorialStructure: [
+        "Capa",
+        "Página de promessa",
+        "Carta de abertura",
+        "Sumário",
+        "Módulo 1 — Fundamento e consciência do problema",
+        "Módulo 2 — Método e transformação principal",
+        "Módulo 3 — Aplicação prática",
+        "Módulo 4 — Consolidação e plano de ação",
+        "Checklist final",
+        "Página de encerramento e CTA"
+      ],
+      didacticAssets: [
+        "Mapa mental da jornada do leitor",
+        "Infográfico da transformação",
+        "Boxes de conceito-chave",
+        "Checklist prático",
+        "Página de exercícios",
+        "Quadro antes/depois"
+      ],
+      exportPlan: [
+        "Gerar HTML/WebBook responsivo",
+        "Gerar DOCX editável",
+        "Preparar PDF premium",
+        "Empacotar ZIP final com arquivos do projeto"
+      ]
+    };
+
+    setArtifact(created);
   }
 
   return (
@@ -136,11 +193,11 @@ export function PublisherMvp() {
               Publisher IA MVP
             </p>
             <h1 className="mt-3 text-3xl font-semibold">
-              Crie a memória e o diagnóstico inicial
+              Crie a memória, o diagnóstico e o artefato editorial
             </h1>
             <p className="mt-3 text-sm leading-7 text-[#F5F0E8]/70">
-              Esta tela testa o fluxo mínimo: entrada do projeto, anexo inicial,
-              memória editorial, diagnóstico e preparação do Cofre Editorial.
+              Fluxo mínimo validado: entrada do projeto, escolha visual, formatos,
+              anexo inicial, diagnóstico e preparação do produto final.
             </p>
           </div>
 
@@ -256,6 +313,14 @@ export function PublisherMvp() {
             >
               Gerar Diagnóstico
             </button>
+
+            <button
+              onClick={approveToArtifact}
+              disabled={!memory || !diagnosis}
+              className="rounded-xl border border-[#C9A84C]/30 px-5 py-3 text-sm text-[#F5F0E8] disabled:opacity-40"
+            >
+              Aprovar para Artefato
+            </button>
           </div>
 
           {memory && (
@@ -280,10 +345,24 @@ export function PublisherMvp() {
                   <strong>Promessa:</strong> {diagnosis.promise}
                 </p>
 
+                <p>
+                  <strong>Formato recomendado:</strong>{" "}
+                  {diagnosis.recommendedFormat}
+                </p>
+
                 <div>
-                  <strong>Estrutura sugerida:</strong>
+                  <strong>Pontos fortes:</strong>
                   <ul className="mt-2 list-disc space-y-1 pl-5">
-                    {diagnosis.structure.map((item) => (
+                    {diagnosis.strengths.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div>
+                  <strong>Lacunas:</strong>
+                  <ul className="mt-2 list-disc space-y-1 pl-5">
+                    {diagnosis.gaps.map((item) => (
                       <li key={item}>{item}</li>
                     ))}
                   </ul>
@@ -297,15 +376,52 @@ export function PublisherMvp() {
                     ))}
                   </ul>
                 </div>
+              </div>
+            </div>
+          )}
 
-                <div>
-                  <strong>Riscos editoriais:</strong>
-                  <ul className="mt-2 list-disc space-y-1 pl-5">
-                    {diagnosis.risks.map((item) => (
+          {artifact && (
+            <div className="rounded-3xl border border-[#C9A84C]/20 bg-[#120609] p-6">
+              <h2 className="text-2xl font-semibold text-[#C9A84C]">
+                Artefato Editorial
+              </h2>
+
+              <div className="mt-5 grid gap-5 md:grid-cols-2">
+                <div className="rounded-2xl bg-black/35 p-5">
+                  <h3 className="font-semibold">Estrutura do produto</h3>
+                  <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[#F5F0E8]/70">
+                    {artifact.editorialStructure.map((item) => (
                       <li key={item}>{item}</li>
                     ))}
                   </ul>
                 </div>
+
+                <div className="rounded-2xl bg-black/35 p-5">
+                  <h3 className="font-semibold">Didática visual</h3>
+                  <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[#F5F0E8]/70">
+                    {artifact.didacticAssets.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="rounded-2xl bg-black/35 p-5 md:col-span-2">
+                  <h3 className="font-semibold">Plano de exportação</h3>
+                  <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[#F5F0E8]/70">
+                    {artifact.exportPlan.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-3">
+                <button className="rounded-xl bg-[#C9A84C] px-5 py-3 text-sm font-semibold text-black">
+                  Próximo: Gerar HTML
+                </button>
+                <button className="rounded-xl border border-[#C9A84C]/30 px-5 py-3 text-sm text-[#F5F0E8]">
+                  Próximo: Gerar DOCX
+                </button>
               </div>
             </div>
           )}
@@ -319,25 +435,16 @@ export function PublisherMvp() {
           <h2 className="mt-3 text-xl font-semibold">Itens definitivos</h2>
 
           <p className="mt-3 text-sm leading-6 text-[#F5F0E8]/65">
-            Quando a memória e o diagnóstico forem aprovados, eles entram aqui
-            para compor o produto final.
+            Aqui entram os itens aprovados para compor o produto final.
           </p>
 
-          <div className="mt-5 rounded-2xl border border-[#C9A84C]/20 bg-black/25 p-4 text-sm text-[#F5F0E8]/70">
-            Memória: {memory ? "criada" : "aguardando"}
-            <br />
-            Diagnóstico: {diagnosis ? "criado" : "aguardando"}
-            <br />
-            Formatos: {formats.join(", ")}
-            <br />
-            Tema: {visualStyle || "aguardando escolha"}
+          <div className="mt-5 space-y-3 rounded-2xl border border-[#C9A84C]/20 bg-black/25 p-4 text-sm text-[#F5F0E8]/70">
+            <p>Memória: {memory ? "criada" : "aguardando"}</p>
+            <p>Diagnóstico: {diagnosis ? "criado" : "aguardando"}</p>
+            <p>Artefato: {artifact ? "aprovado" : "aguardando"}</p>
+            <p>Formatos: {formats.join(", ")}</p>
+            <p>Tema: {visualStyle || "aguardando escolha"}</p>
           </div>
-
-          {diagnosis && (
-            <button className="mt-5 w-full rounded-xl bg-[#C9A84C] px-5 py-3 text-sm font-semibold text-black">
-              Aprovar para Artefato Editorial
-            </button>
-          )}
         </aside>
       </div>
     </main>

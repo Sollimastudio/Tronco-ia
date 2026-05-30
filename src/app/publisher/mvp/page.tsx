@@ -1,5 +1,5 @@
-import { PublisherMvp } from '../../../components/PublisherMvp';
+import { PublisherMvpEnhanced } from '../../../components/PublisherMvpEnhanced';
 
 export default function PublisherMvpPage() {
-  return <PublisherMvp />;
+  return <PublisherMvpEnhanced />;
 }

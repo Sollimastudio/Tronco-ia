@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 type Memory = {
   projectName: string;
@@ -38,6 +38,11 @@ type Artifact = {
   exportPlan: string[];
 };
 
+type ManuscriptPage = {
+  title: string;
+  body: string;
+};
+
 const visualStyles = [
   "Luxo editorial — bordô, creme, dourado",
   "Clean sofisticado — branco, preto, cinza elegante",
@@ -69,21 +74,101 @@ function slugify(value: string) {
     .replace(/(^-|-$)/g, "") || "publisher";
 }
 
+function cleanText(value: string) {
+  return value
+    .replace(/\r/g, "")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{4,}/g, "\n\n")
+    .replace(/«[a-z0-9]+/gi, "")
+    .replace(/\[(Ds|ss)\]/gi, "")
+    .trim();
+}
+
+function extractTitleFromBody(body: string, fallback: string) {
+  const lines = body
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const candidate = lines.find((line) =>
+    /^(m[oó]dulo|cap[ií]tulo|manual|ant[ií]doto|p[aá]gina|carta|sum[aá]rio)/i.test(line)
+  ) || lines[0];
+
+  if (!candidate) return fallback;
+  return candidate.slice(0, 92);
+}
+
+function splitManuscriptIntoPages(source: string): ManuscriptPage[] {
+  const cleaned = cleanText(source);
+
+  if (!cleaned) return [];
+
+  const chunks = cleaned
+    .split(/\n\s*Página\s+\d+\s*\n/gi)
+    .map((chunk) => cleanText(chunk))
+    .filter((chunk) => chunk.length > 40);
+
+  if (chunks.length > 1) {
+    return chunks.map((chunk, index) => ({
+      title: extractTitleFromBody(chunk, `Página extraída ${index + 1}`),
+      body: chunk
+    }));
+  }
+
+  const paragraphs = cleaned.split(/\n{2,}/).filter((item) => item.trim().length > 30);
+  const pages: ManuscriptPage[] = [];
+  let current = "";
+
+  for (const paragraph of paragraphs) {
+    if ((current + "\n\n" + paragraph).length > 1600 && current) {
+      pages.push({
+        title: extractTitleFromBody(current, `Página ${pages.length + 1}`),
+        body: current
+      });
+      current = paragraph;
+    } else {
+      current = current ? `${current}\n\n${paragraph}` : paragraph;
+    }
+  }
+
+  if (current) {
+    pages.push({
+      title: extractTitleFromBody(current, `Página ${pages.length + 1}`),
+      body: current
+    });
+  }
+
+  return pages;
+}
+
+function paragraphsToHtml(value: string) {
+  return cleanText(value)
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+    .map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`)
+    .join("\n");
+}
+
 function buildHtmlDocument(artifact: Artifact) {
-  const sections = artifact.editorialStructure
-    .map((section, index) => {
-      const didactic = artifact.didacticAssets[index % artifact.didacticAssets.length];
+  const extractedPages = splitManuscriptIntoPages(artifact.sourceSummary);
+  const didacticAssets = artifact.didacticAssets.length ? artifact.didacticAssets : ["Box de conceito-chave"];
+
+  const pages: ManuscriptPage[] = extractedPages.length
+    ? extractedPages
+    : artifact.editorialStructure.map((section) => ({
+        title: section,
+        body: `Esta seção será expandida a partir do material bruto, mantendo o tom ${artifact.tone} e o tema visual ${artifact.visualStyle}.`
+      }));
+
+  const sections = pages
+    .map((page, index) => {
+      const didactic = didacticAssets[index % didacticAssets.length];
       return `
         <section class="page" id="page-${index + 1}">
           <p class="kicker">Página ${index + 1}</p>
-          <h2>${escapeHtml(section)}</h2>
-          <p>${escapeHtml(
-            index === 0
-              ? artifact.promise
-              : index === 1
-                ? artifact.sourceSummary.slice(0, 1200) || "Conteúdo do manuscrito será organizado aqui."
-                : `Esta seção será expandida a partir do material bruto, mantendo o tom ${artifact.tone} e o tema visual ${artifact.visualStyle}.`
-          )}</p>
+          <h2>${escapeHtml(page.title)}</h2>
+          ${paragraphsToHtml(page.body)}
           <div class="visual-box">
             <strong>Recurso didático sugerido</strong>
             <span>${escapeHtml(didactic)}</span>
@@ -93,8 +178,8 @@ function buildHtmlDocument(artifact: Artifact) {
     })
     .join("\n");
 
-  const nav = artifact.editorialStructure
-    .map((section, index) => `<a href="#page-${index + 1}">${index + 1}. ${escapeHtml(section)}</a>`)
+  const nav = pages
+    .map((page, index) => `<a href="#page-${index + 1}">${index + 1}. ${escapeHtml(page.title)}</a>`)
     .join("");
 
   return `<!doctype html>
@@ -113,6 +198,7 @@ function buildHtmlDocument(artifact: Artifact) {
       --muted: rgba(245, 240, 232, .72);
     }
     * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body {
       margin: 0;
       background: radial-gradient(circle at top, rgba(201,168,76,.14), transparent 34%), var(--black);
@@ -134,11 +220,13 @@ function buildHtmlDocument(artifact: Artifact) {
     h1, h2 { font-family: Georgia, 'Times New Roman', serif; line-height: 1.05; margin: 0; }
     h1 { font-size: clamp(42px, 8vw, 92px); max-width: 920px; }
     h2 { font-size: clamp(30px, 5vw, 58px); }
-    p { font-size: 18px; line-height: 1.75; color: var(--muted); }
+    p { font-size: 18px; line-height: 1.75; color: var(--muted); white-space: pre-wrap; }
     .meta { margin-top: 24px; display: grid; gap: 8px; color: var(--muted); }
+    .notice { margin-top: 28px; padding: 16px; border-radius: 18px; border: 1px solid rgba(201,168,76,.24); color: var(--muted); background: rgba(0,0,0,.22); }
     .nav { position: sticky; top: 0; z-index: 10; display: flex; gap: 10px; overflow-x: auto; padding: 14px 0; background: var(--black); }
     .nav a { flex: 0 0 auto; color: var(--cream); text-decoration: none; border: 1px solid rgba(201,168,76,.25); padding: 10px 12px; border-radius: 999px; font-size: 13px; }
     .page { min-height: 92vh; margin: 28px 0; padding: 36px; border-radius: 30px; border: 1px solid rgba(201,168,76,.22); background: linear-gradient(135deg, var(--wine), rgba(28,18,20,.88)); }
+    .page p + p { margin-top: 18px; }
     .visual-box { margin-top: 28px; padding: 22px; border: 1px dashed rgba(201,168,76,.55); border-radius: 24px; background: rgba(0,0,0,.22); display: grid; gap: 8px; }
     .visual-box strong { color: var(--gold); text-transform: uppercase; letter-spacing: .18em; font-size: 12px; }
     .visual-box span { color: var(--cream); }
@@ -156,7 +244,9 @@ function buildHtmlDocument(artifact: Artifact) {
           <span>Público: ${escapeHtml(artifact.audience || "não definido")}</span>
           <span>Tom: ${escapeHtml(artifact.tone || "sofisticado, claro e útil")}</span>
           <span>Formatos planejados: ${escapeHtml(artifact.finalFormats.join(", "))}</span>
+          <span>Páginas renderizadas: ${pages.length}</span>
         </div>
+        <div class="notice">Rascunho editorial automático: revise OCR, acentos, quebras e títulos antes da publicação final.</div>
       </div>
     </section>
     <nav class="nav">${nav}</nav>
@@ -179,6 +269,8 @@ export function PublisherMvp() {
   const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
   const [artifact, setArtifact] = useState<Artifact | null>(null);
   const [htmlStatus, setHtmlStatus] = useState("");
+
+  const extractedPageCount = useMemo(() => splitManuscriptIntoPages(sourceSummary).length, [sourceSummary]);
 
   function toggleFormat(format: string) {
     setFormats((current) =>
@@ -254,12 +346,13 @@ export function PublisherMvp() {
         "Existe uma intenção clara de transformação.",
         "O público já foi definido.",
         "O formato final já começou a ser escolhido.",
-        "O tema visual dá direção para a diagramação."
+        "O tema visual dá direção para a diagramação.",
+        extractedPageCount ? `Foram detectadas ${extractedPageCount} páginas/seções no manuscrito.` : "O manuscrito ainda precisa ser segmentado."
       ],
       gaps: [
-        "Ainda falta definir a arquitetura completa de capítulos/módulos.",
+        "Ainda falta revisão editorial humana ou IA avançada para limpar OCR e corrigir títulos.",
         "Ainda falta mapear onde entrarão infográficos, mapas mentais e exercícios.",
-        "Ainda falta transformar o material bruto em sequência editorial paginada.",
+        "Ainda falta transformar o material bruto em texto final reescrito por página.",
         "PDF e DOCX finais exigem motor de exportação na próxima etapa."
       ],
       visualNeeds: [
@@ -311,7 +404,7 @@ export function PublisherMvp() {
         "Quadro antes/depois"
       ],
       exportPlan: [
-        "Gerar HTML/WebBook responsivo",
+        "Gerar HTML/WebBook responsivo com páginas reais extraídas do manuscrito",
         "Gerar DOCX editável",
         "Preparar PDF premium",
         "Empacotar ZIP final com arquivos do projeto"
@@ -335,7 +428,7 @@ export function PublisherMvp() {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
-    setHtmlStatus("HTML gerado e baixado com sucesso.");
+    setHtmlStatus("HTML gerado e baixado com páginas distribuídas do manuscrito.");
   }
 
   return (
@@ -343,15 +436,10 @@ export function PublisherMvp() {
       <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[1fr_380px]">
         <section className="space-y-6">
           <div className="rounded-3xl border border-[#C9A84C]/25 bg-[#120609] p-6">
-            <p className="text-xs uppercase tracking-[0.35em] text-[#C9A84C]">
-              Publisher IA MVP
-            </p>
-            <h1 className="mt-3 text-3xl font-semibold">
-              Crie a memória, o diagnóstico e o artefato editorial
-            </h1>
+            <p className="text-xs uppercase tracking-[0.35em] text-[#C9A84C]">Publisher IA MVP</p>
+            <h1 className="mt-3 text-3xl font-semibold">Crie a memória, o diagnóstico e o artefato editorial</h1>
             <p className="mt-3 text-sm leading-7 text-[#F5F0E8]/70">
-              Fluxo mínimo validado: entrada do projeto, escolha visual, formatos,
-              anexo inicial, diagnóstico, artefato e exportação HTML.
+              Fluxo mínimo validado: entrada do projeto, escolha visual, formatos, anexo, diagnóstico, artefato e exportação HTML com páginas distribuídas.
             </p>
           </div>
 
@@ -386,6 +474,7 @@ export function PublisherMvp() {
             <p className="text-xs uppercase tracking-[0.3em] text-[#C9A84C]">Material bruto</p>
             <input type="file" accept=".txt,.md,.pdf,.doc,.docx" className="mt-4 w-full rounded-2xl border border-dashed border-[#C9A84C]/30 bg-black/30 p-4" onChange={(event) => handleFile(event.target.files?.[0])} />
             {attachedFileName && <p className="mt-3 text-sm text-[#F5F0E8]/70">Arquivo anexado: {attachedFileName}</p>}
+            {extractedPageCount > 0 && <p className="mt-2 text-sm text-[#C9A84C]">{extractedPageCount} páginas/seções detectadas no manuscrito.</p>}
             <textarea className="mt-4 min-h-40 w-full rounded-2xl border border-[#C9A84C]/20 bg-black/40 p-4 outline-none" placeholder="Resumo do material, ideia ou manuscrito" value={sourceSummary} onChange={(event) => setSourceSummary(event.target.value)} />
           </div>
 
@@ -421,7 +510,7 @@ export function PublisherMvp() {
               <div className="mt-5 grid gap-5 md:grid-cols-2">
                 <div className="rounded-2xl bg-black/35 p-5"><h3 className="font-semibold">Estrutura do produto</h3><ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[#F5F0E8]/70">{artifact.editorialStructure.map((item) => <li key={item}>{item}</li>)}</ul></div>
                 <div className="rounded-2xl bg-black/35 p-5"><h3 className="font-semibold">Didática visual</h3><ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[#F5F0E8]/70">{artifact.didacticAssets.map((item) => <li key={item}>{item}</li>)}</ul></div>
-                <div className="rounded-2xl bg-black/35 p-5 md:col-span-2"><h3 className="font-semibold">Plano de exportação</h3><ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[#F5F0E8]/70">{artifact.exportPlan.map((item) => <li key={item}>{item}</li>)}</ul></div>
+                <div className="rounded-2xl bg-black/35 p-5 md:col-span-2"><h3 className="Plano de exportação">Plano de exportação</h3><ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[#F5F0E8]/70">{artifact.exportPlan.map((item) => <li key={item}>{item}</li>)}</ul></div>
               </div>
               <div className="mt-5 flex flex-wrap gap-3">
                 <button onClick={downloadHtml} className="rounded-xl bg-[#C9A84C] px-5 py-3 text-sm font-semibold text-black">Gerar HTML</button>
@@ -442,6 +531,7 @@ export function PublisherMvp() {
             <p>Artefato: {artifact ? "aprovado" : "aguardando"}</p>
             <p>Formatos: {formats.join(", ")}</p>
             <p>Tema: {visualStyle || "aguardando escolha"}</p>
+            <p>Páginas: {extractedPageCount || "aguardando"}</p>
             <p>HTML: {htmlStatus ? "gerado" : "aguardando"}</p>
           </div>
         </aside>

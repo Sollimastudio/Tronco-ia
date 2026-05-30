@@ -74,7 +74,7 @@ function slugify(value: string) {
     .replace(/(^-|-$)/g, "") || "publisher";
 }
 
-function cleanText(value: string) {
+function baseCleanText(value: string) {
   return String(value || "")
     .replace(/\r/g, "")
     .replace(/[ \t]+/g, " ")
@@ -82,6 +82,104 @@ function cleanText(value: string) {
     .replace(/«[a-z0-9]+/gi, "")
     .replace(/\[(Ds|ss)\]/gi, "")
     .trim();
+}
+
+function repairCommonOcr(value: string) {
+  const replacements: Array<[RegExp, string]> = [
+    [/MANUAL DEAUTOCIRURGIA/gi, "MANUAL DE AUTOCIRURGIA"],
+    [/Autocirurgi\b/gi, "Autocirurgia"],
+    [/semnenhuma/gi, "sem nenhuma"],
+    [/barulhopara/gi, "barulho para"],
+    [/porfalta/gi, "por falta"],
+    [/quefunciona/gi, "que funciona"],
+    [/omundo/gi, "o mundo"],
+    [/muitotempo/gi, "muito tempo"],
+    [/antesde/gi, "antes de"],
+    [/cadadecisão/gi, "cada decisão"],
+    [/sensivel/gi, "sensível"],
+    [/saida/gi, "saída"],
+    [/cium(e|e)/gi, "ciúme"],
+    [/Vítiapítulo\s+inguagem de Vítima/gi, "Vítima"],
+    [/Fofoca comoIdentidade/gi, "Fofoca como Identidade"],
+    [/Instabilidade Emocionalcomo/gi, "Instabilidade Emocional como"],
+    [/Necessidade deAprovação/gi, "Necessidade de Aprovação"],
+    [/Mulher que Testa — ePerde/gi, "Mulher que Testa — e Perde"],
+    [/O Móauto Il/gi, "O Módulo II"],
+    [/MÓDULO!Como/gi, "MÓDULO I\nComo"],
+    [/MÓDULO!Atitudes/gi, "MÓDULO II\nAtitudes"],
+    [/A Ferida O Governo/gi, "A Ferida\n\nO Governo"],
+    [/D Esselivo é pravocê/gi, "Este livro é para você"],
+    [/trêspessoas/gi, "três pessoas"],
+    [/desprendidaassim/gi, "desprendida assim"],
+    [/comportamento funciona\.Funciona/gi, "comportamento funciona.\n\nFunciona"],
+    [/padrão repetido de comportamento/gi, "padrão repetido de comportamento"],
+    [/seescondendo/gi, "se escondendo"],
+    [/externamuda/gi, "externa muda"],
+    [/afrieza/gi, "a frieza"],
+    [/emalgum/gi, "em algum"],
+    [/umsegundo/gi, "um segundo"],
+    [/oddiagnóstico/gi, "o diagnóstico"],
+    [/banalem/gi, "banal em"],
+    [/silênciocomunicando/gi, "silêncio comunicando"],
+    [/noescuta/gi, "na escuta"],
+    [/quando pelo quanto/gi, "quanto pelo quanto"],
+    [/mesmo com quemaama/gi, "mesmo com quem a ama"],
+    [/realou/gi, "real ou"],
+    [/acrença/gi, "a crença"]
+  ];
+
+  return replacements.reduce((current, [pattern, replacement]) => current.replace(pattern, replacement), value);
+}
+
+function isLikelyOcrTrash(chunk: string) {
+  const letters = (chunk.match(/[A-Za-zÀ-ÿ]/g) || []).length;
+  const weird = (chunk.match(/[=<>_#@~^§¢£¬ªº]|RRRN|ffRR|CRET|rdDER|LEO ERR/gi) || []).length;
+  const words = (chunk.match(/[A-Za-zÀ-ÿ]{3,}/g) || []).length;
+
+  return chunk.length < 260 && (weird >= 2 || words < 6 || letters < 40);
+}
+
+function editorialCleanManuscript(value: string) {
+  let text = baseCleanText(value);
+
+  text = text
+    .replace(/Versão convertida para texto OCR para leitura pelo Manus/gi, "")
+    .replace(/Observação:\s*o PDF original parece ter texto com codificação\/fontes que impedem extração limpa\. Esta versão foi feita por OCR; revise acentos, numeração e quebras antes de publicar\./gi, "")
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[|]/g, " — ")
+    .replace(/\s+([,.!?;:])/g, "$1")
+    .replace(/([.!?])([A-ZÁÉÍÓÚÃÕÇ])/g, "$1\n\n$2")
+    .replace(/([a-záéíóúãõç])([A-ZÁÉÍÓÚÃÕÇ][a-záéíóúãõç])/g, "$1 $2");
+
+  text = repairCommonOcr(text);
+
+  const pageParts = text.split(/\n\s*Página\s+(\d+)\s*\n/gi);
+
+  if (pageParts.length > 1) {
+    const intro = baseCleanText(pageParts[0]);
+    const rebuilt: string[] = intro ? [intro] : [];
+
+    for (let index = 1; index < pageParts.length; index += 2) {
+      const pageNumber = pageParts[index];
+      const body = repairCommonOcr(baseCleanText(pageParts[index + 1] || ""));
+
+      if (!body || isLikelyOcrTrash(body)) continue;
+
+      rebuilt.push(`Página ${pageNumber}\n\n${body}`);
+    }
+
+    text = rebuilt.join("\n\n");
+  }
+
+  return text
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/ {2,}/g, " ")
+    .trim();
+}
+
+function cleanText(value: string) {
+  return baseCleanText(value);
 }
 
 function extractTitleFromBody(body: string, fallback: string) {
@@ -107,7 +205,8 @@ function splitManuscriptIntoPages(source: string): ManuscriptPage[] {
   const chunks = cleaned
     .split(/\n\s*Página\s+\d+\s*\n/gi)
     .map((chunk) => cleanText(chunk))
-    .filter((chunk) => chunk.length > 40);
+    .filter((chunk) => chunk.length > 40)
+    .filter((chunk) => !isLikelyOcrTrash(chunk));
 
   if (chunks.length > 1) {
     return chunks.map((chunk, index) => ({
@@ -271,6 +370,7 @@ export function PublisherMvp() {
   const [artifact, setArtifact] = useState<Artifact | null>(null);
   const [htmlStatus, setHtmlStatus] = useState("");
   const [docxStatus, setDocxStatus] = useState("");
+  const [cleanStatus, setCleanStatus] = useState("");
 
   const extractedPageCount = useMemo(() => splitManuscriptIntoPages(sourceSummary).length, [sourceSummary]);
 
@@ -287,6 +387,7 @@ export function PublisherMvp() {
 
     setAttachedFileName(file.name);
     setSourceSummary("Processando arquivo...");
+    setCleanStatus("");
 
     const formData = new FormData();
     formData.append("file", file);
@@ -315,6 +416,23 @@ export function PublisherMvp() {
           : "Erro ao processar arquivo."
       );
     }
+  }
+
+  function cleanManuscript() {
+    const beforeLength = sourceSummary.length;
+    const beforePages = splitManuscriptIntoPages(sourceSummary).length;
+    const cleaned = editorialCleanManuscript(sourceSummary);
+    const afterPages = splitManuscriptIntoPages(cleaned).length;
+
+    setSourceSummary(cleaned);
+    setMemory(null);
+    setDiagnosis(null);
+    setArtifact(null);
+    setHtmlStatus("");
+    setDocxStatus("");
+    setCleanStatus(
+      `Manuscrito limpo: ${beforeLength.toLocaleString("pt-BR")} caracteres tratados; ${beforePages} → ${afterPages} páginas/seções úteis.`
+    );
   }
 
   function createMemory() {
@@ -353,7 +471,7 @@ export function PublisherMvp() {
         extractedPageCount ? `Foram detectadas ${extractedPageCount} páginas/seções no manuscrito.` : "O manuscrito ainda precisa ser segmentado."
       ],
       gaps: [
-        "Ainda falta revisão editorial humana ou IA avançada para limpar OCR e corrigir títulos.",
+        "Ainda falta revisão editorial humana ou IA avançada para polimento fino do texto.",
         "Ainda falta mapear onde entrarão infográficos, mapas mentais e exercícios.",
         "Ainda falta transformar o material bruto em texto final reescrito por página.",
         "PDF final exige motor de conversão visual na próxima etapa."
@@ -479,7 +597,7 @@ export function PublisherMvp() {
             <p className="text-xs uppercase tracking-[0.35em] text-[#C9A84C]">Publisher IA MVP</p>
             <h1 className="mt-3 text-3xl font-semibold">Crie a memória, o diagnóstico e o artefato editorial</h1>
             <p className="mt-3 text-sm leading-7 text-[#F5F0E8]/70">
-              Fluxo mínimo validado: entrada do projeto, escolha visual, formatos, anexo, diagnóstico, artefato, HTML e DOCX editável.
+              Fluxo validado: entrada, limpeza editorial, memória, diagnóstico, artefato, HTML e DOCX editável.
             </p>
           </div>
 
@@ -515,6 +633,12 @@ export function PublisherMvp() {
             <input type="file" accept=".txt,.md,.pdf,.doc,.docx" className="mt-4 w-full rounded-2xl border border-dashed border-[#C9A84C]/30 bg-black/30 p-4" onChange={(event) => handleFile(event.target.files?.[0])} />
             {attachedFileName && <p className="mt-3 text-sm text-[#F5F0E8]/70">Arquivo anexado: {attachedFileName}</p>}
             {extractedPageCount > 0 && <p className="mt-2 text-sm text-[#C9A84C]">{extractedPageCount} páginas/seções detectadas no manuscrito.</p>}
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button onClick={cleanManuscript} disabled={!sourceSummary || sourceSummary === "Processando arquivo..."} className="rounded-xl border border-[#C9A84C]/30 px-5 py-3 text-sm text-[#F5F0E8] disabled:opacity-40">
+                Limpar Manuscrito
+              </button>
+              {cleanStatus && <span className="self-center text-sm text-[#C9A84C]">{cleanStatus}</span>}
+            </div>
             <textarea className="mt-4 min-h-40 w-full rounded-2xl border border-[#C9A84C]/20 bg-black/40 p-4 outline-none" placeholder="Resumo do material, ideia ou manuscrito" value={sourceSummary} onChange={(event) => setSourceSummary(event.target.value)} />
           </div>
 
@@ -567,6 +691,7 @@ export function PublisherMvp() {
           <h2 className="mt-3 text-xl font-semibold">Itens definitivos</h2>
           <p className="mt-3 text-sm leading-6 text-[#F5F0E8]/65">Aqui entram os itens aprovados para compor o produto final.</p>
           <div className="mt-5 space-y-3 rounded-2xl border border-[#C9A84C]/20 bg-black/25 p-4 text-sm text-[#F5F0E8]/70">
+            <p>Limpeza: {cleanStatus ? "aplicada" : "aguardando"}</p>
             <p>Memória: {memory ? "criada" : "aguardando"}</p>
             <p>Diagnóstico: {diagnosis ? "criado" : "aguardando"}</p>
             <p>Artefato: {artifact ? "aprovado" : "aguardando"}</p>

@@ -57,7 +57,7 @@ const visualStyles = [
 const availableFormats = ["HTML", "PDF", "DOCX", "ZIP"];
 
 function escapeHtml(value: string) {
-  return value
+  return String(value || "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -75,7 +75,7 @@ function slugify(value: string) {
 }
 
 function cleanText(value: string) {
-  return value
+  return String(value || "")
     .replace(/\r/g, "")
     .replace(/[ \t]+/g, " ")
     .replace(/\n{4,}/g, "\n\n")
@@ -90,9 +90,10 @@ function extractTitleFromBody(body: string, fallback: string) {
     .map((line) => line.trim())
     .filter(Boolean);
 
-  const candidate = lines.find((line) =>
-    /^(m[oó]dulo|cap[ií]tulo|manual|ant[ií]doto|p[aá]gina|carta|sum[aá]rio)/i.test(line)
-  ) || lines[0];
+  const candidate =
+    lines.find((line) =>
+      /^(m[oó]dulo|cap[ií]tulo|manual|ant[ií]doto|p[aá]gina|carta|sum[aá]rio|bloco)/i.test(line)
+    ) || lines[0];
 
   if (!candidate) return fallback;
   return candidate.slice(0, 92);
@@ -269,6 +270,7 @@ export function PublisherMvp() {
   const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
   const [artifact, setArtifact] = useState<Artifact | null>(null);
   const [htmlStatus, setHtmlStatus] = useState("");
+  const [docxStatus, setDocxStatus] = useState("");
 
   const extractedPageCount = useMemo(() => splitManuscriptIntoPages(sourceSummary).length, [sourceSummary]);
 
@@ -333,6 +335,7 @@ export function PublisherMvp() {
     setDiagnosis(null);
     setArtifact(null);
     setHtmlStatus("");
+    setDocxStatus("");
   }
 
   function createDiagnosis() {
@@ -353,7 +356,7 @@ export function PublisherMvp() {
         "Ainda falta revisão editorial humana ou IA avançada para limpar OCR e corrigir títulos.",
         "Ainda falta mapear onde entrarão infográficos, mapas mentais e exercícios.",
         "Ainda falta transformar o material bruto em texto final reescrito por página.",
-        "PDF e DOCX finais exigem motor de exportação na próxima etapa."
+        "PDF final exige motor de conversão visual na próxima etapa."
       ],
       visualNeeds: [
         "Capa editorial premium.",
@@ -370,6 +373,7 @@ export function PublisherMvp() {
     setDiagnosis(created);
     setArtifact(null);
     setHtmlStatus("");
+    setDocxStatus("");
   }
 
   function approveToArtifact() {
@@ -405,7 +409,7 @@ export function PublisherMvp() {
       ],
       exportPlan: [
         "Gerar HTML/WebBook responsivo com páginas reais extraídas do manuscrito",
-        "Gerar DOCX editável",
+        "Gerar DOCX editável com páginas distribuídas",
         "Preparar PDF premium",
         "Empacotar ZIP final com arquivos do projeto"
       ]
@@ -413,6 +417,7 @@ export function PublisherMvp() {
 
     setArtifact(created);
     setHtmlStatus("");
+    setDocxStatus("");
   }
 
   function downloadHtml() {
@@ -431,6 +436,41 @@ export function PublisherMvp() {
     setHtmlStatus("HTML gerado e baixado com páginas distribuídas do manuscrito.");
   }
 
+  async function downloadDocx() {
+    if (!artifact) return;
+
+    setDocxStatus("Gerando DOCX...");
+
+    try {
+      const response = await fetch("/api/publisher/docx", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ artifact })
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        setDocxStatus(error?.detail || error?.error || "Falha ao gerar DOCX.");
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `${slugify(artifact.productTitle)}-editavel.docx`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      setDocxStatus("DOCX gerado e baixado com sucesso.");
+    } catch (error) {
+      setDocxStatus(
+        error instanceof Error ? `Erro ao gerar DOCX: ${error.message}` : "Erro ao gerar DOCX."
+      );
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#0A0A0A] p-6 text-[#F5F0E8]">
       <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[1fr_380px]">
@@ -439,7 +479,7 @@ export function PublisherMvp() {
             <p className="text-xs uppercase tracking-[0.35em] text-[#C9A84C]">Publisher IA MVP</p>
             <h1 className="mt-3 text-3xl font-semibold">Crie a memória, o diagnóstico e o artefato editorial</h1>
             <p className="mt-3 text-sm leading-7 text-[#F5F0E8]/70">
-              Fluxo mínimo validado: entrada do projeto, escolha visual, formatos, anexo, diagnóstico, artefato e exportação HTML com páginas distribuídas.
+              Fluxo mínimo validado: entrada do projeto, escolha visual, formatos, anexo, diagnóstico, artefato, HTML e DOCX editável.
             </p>
           </div>
 
@@ -510,13 +550,14 @@ export function PublisherMvp() {
               <div className="mt-5 grid gap-5 md:grid-cols-2">
                 <div className="rounded-2xl bg-black/35 p-5"><h3 className="font-semibold">Estrutura do produto</h3><ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[#F5F0E8]/70">{artifact.editorialStructure.map((item) => <li key={item}>{item}</li>)}</ul></div>
                 <div className="rounded-2xl bg-black/35 p-5"><h3 className="font-semibold">Didática visual</h3><ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[#F5F0E8]/70">{artifact.didacticAssets.map((item) => <li key={item}>{item}</li>)}</ul></div>
-                <div className="rounded-2xl bg-black/35 p-5 md:col-span-2"><h3 className="Plano de exportação">Plano de exportação</h3><ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[#F5F0E8]/70">{artifact.exportPlan.map((item) => <li key={item}>{item}</li>)}</ul></div>
+                <div className="rounded-2xl bg-black/35 p-5 md:col-span-2"><h3 className="font-semibold">Plano de exportação</h3><ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-[#F5F0E8]/70">{artifact.exportPlan.map((item) => <li key={item}>{item}</li>)}</ul></div>
               </div>
               <div className="mt-5 flex flex-wrap gap-3">
                 <button onClick={downloadHtml} className="rounded-xl bg-[#C9A84C] px-5 py-3 text-sm font-semibold text-black">Gerar HTML</button>
-                <button className="rounded-xl border border-[#C9A84C]/30 px-5 py-3 text-sm text-[#F5F0E8]">Próximo: Gerar DOCX</button>
+                <button onClick={downloadDocx} className="rounded-xl border border-[#C9A84C]/30 px-5 py-3 text-sm text-[#F5F0E8]">Gerar DOCX</button>
               </div>
               {htmlStatus && <p className="mt-4 text-sm text-[#C9A84C]">{htmlStatus}</p>}
+              {docxStatus && <p className="mt-2 text-sm text-[#C9A84C]">{docxStatus}</p>}
             </div>
           )}
         </section>
@@ -533,6 +574,7 @@ export function PublisherMvp() {
             <p>Tema: {visualStyle || "aguardando escolha"}</p>
             <p>Páginas: {extractedPageCount || "aguardando"}</p>
             <p>HTML: {htmlStatus ? "gerado" : "aguardando"}</p>
+            <p>DOCX: {docxStatus ? "gerado" : "aguardando"}</p>
           </div>
         </aside>
       </div>

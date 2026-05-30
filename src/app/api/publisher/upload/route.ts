@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import mammoth from "mammoth";
 
+const MAX_EXTRACTED_CHARS = 80000;
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -24,7 +26,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         fileName,
         type: extension,
-        text: text.slice(0, 12000),
+        text: text.slice(0, MAX_EXTRACTED_CHARS),
+        originalLength: text.length,
+        returnedLength: Math.min(text.length, MAX_EXTRACTED_CHARS),
+        truncated: text.length > MAX_EXTRACTED_CHARS,
         status: "extracted"
       });
     }
@@ -36,7 +41,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         fileName,
         type: "docx",
-        text: text.slice(0, 12000),
+        text: text.slice(0, MAX_EXTRACTED_CHARS),
+        originalLength: text.length,
+        returnedLength: Math.min(text.length, MAX_EXTRACTED_CHARS),
+        truncated: text.length > MAX_EXTRACTED_CHARS,
         status: "extracted",
         warnings: result.messages || []
       });

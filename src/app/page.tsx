@@ -12,19 +12,23 @@ const values = [
 const pillars = [
   {
     title: 'Metodo Posicione-se',
-    text: 'Discernimento pratico para sair do impulso, investigar padroes e decidir com mais clareza.'
+    text: 'Discernimento pratico para sair do impulso, investigar padroes e decidir com mais clareza.',
+    href: '/metodo-posicione-se'
   },
   {
-    title: 'CSI da mente',
-    text: 'Evidencia nao mente. Pode ate ser mal interpretada, mas nao mente. Aqui, padrao vira pista.'
+    title: 'Teste da Arvore',
+    text: 'Um diagnostico rapido para identificar impulso, medo, carencia, defesa e discernimento.',
+    href: '/arvore'
   },
   {
     title: 'Magnetus',
-    text: 'Presenca, comportamento magnetico e inteligencia emocional para homens e mulheres.'
+    text: 'Presenca, comportamento magnetico e inteligencia emocional para homens e mulheres.',
+    href: 'https://magnetus.relacione-se.com'
   },
   {
     title: 'MINDSETmagro',
-    text: 'Desobesidade emocional: mente, corpo, comida, respiracao e reconstrucao de identidade.'
+    text: 'Desobesidade emocional: mente, corpo, comida, respiracao e reconstrucao de identidade.',
+    href: 'https://mindsetmagro.relacione-se.com'
   }
 ];
 
@@ -41,13 +45,13 @@ const products = [
   },
   {
     name: 'Morte em Vida',
-    description: 'A anatomia do feminicidio emocional, apagamento, autoanulacao e reconstrução.',
-    href: '#em-breve'
+    description: 'A anatomia do feminicidio emocional, apagamento, autoanulacao e reconstrucao.',
+    href: '/livros'
   },
   {
     name: 'Posicione-se',
     description: 'Livro e metodo para sair da repeticao e viver com discernimento.',
-    href: '#em-breve'
+    href: '/metodo-posicione-se'
   }
 ];
 
@@ -58,17 +62,17 @@ export default function Page() {
         <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_top_left,_rgba(185,131,55,0.28),_transparent_34%),radial-gradient(circle_at_85%_20%,_rgba(110,13,28,0.40),_transparent_35%),linear-gradient(135deg,#080403_0%,#18070A_45%,#030303_100%)]" />
         <div className="absolute left-1/2 top-0 -z-10 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-[#7B1024]/20 blur-3xl" />
 
-        <nav className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-          <div>
+        <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
+          <a href="/" className="block">
             <p className="text-xs uppercase tracking-[0.45em] text-[#C9A04A]">Relacione-se</p>
             <p className="mt-1 text-sm text-[#F7EFE3]/65">Acesse seus recursos internos</p>
-          </div>
-          <a
-            href="https://instagram.com/_relacione_se"
-            className="rounded-full border border-[#C9A04A]/35 px-5 py-2 text-sm text-[#F7EFE3] transition hover:border-[#C9A04A] hover:bg-[#C9A04A]/10"
-          >
-            Instagram
           </a>
+          <div className="flex flex-wrap gap-3 text-sm">
+            <a href="/sobre" className="rounded-full border border-[#C9A04A]/25 px-4 py-2 hover:bg-[#C9A04A]/10">Sobre</a>
+            <a href="/arvore" className="rounded-full border border-[#C9A04A]/25 px-4 py-2 hover:bg-[#C9A04A]/10">Teste da Arvore</a>
+            <a href="/metodo-posicione-se" className="rounded-full border border-[#C9A04A]/25 px-4 py-2 hover:bg-[#C9A04A]/10">Metodo</a>
+            <a href="https://instagram.com/_relacione_se" className="rounded-full border border-[#C9A04A]/35 px-4 py-2 hover:bg-[#C9A04A]/10">Instagram</a>
+          </div>
         </nav>
 
         <div className="mx-auto grid max-w-7xl items-center gap-12 pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:pt-28">
@@ -84,13 +88,13 @@ export default function Page() {
             </p>
             <div className="mt-9 flex flex-col gap-4 sm:flex-row">
               <a
-                href="#ecossistema"
+                href="/arvore"
                 className="rounded-full bg-[#C9A04A] px-7 py-4 text-center font-bold text-black shadow-xl shadow-[#000]/35 transition hover:scale-[1.02]"
               >
-                Conhecer o ecossistema
+                Fazer o Teste da Arvore
               </a>
               <a
-                href="#sol-lima"
+                href="/sobre"
                 className="rounded-full border border-[#C9A04A]/45 px-7 py-4 text-center font-bold text-[#F7EFE3] transition hover:bg-[#C9A04A]/10"
               >
                 Quem e Sol Lima
@@ -108,10 +112,15 @@ export default function Page() {
                   Pode ate equivocar-se na interpretacao, mas nao mente. O metodo observa frutos, raizes, padroes, modos operantes e escolhas repetidas ate encontrar o ponto de reposicionamento.
                 </p>
                 <div className="mt-8 grid gap-3 text-sm">
-                  {['Arvore do Discernimento', 'Matematica do Perdao', 'Reset da Respiracao', 'Manequim Mental Ideal'].map((item) => (
-                    <div key={item} className="rounded-2xl border border-[#C9A04A]/18 bg-black/25 px-4 py-3 text-[#F7EFE3]/82">
+                  {[
+                    ['Arvore do Discernimento', '/arvore'],
+                    ['Matematica do Perdao', '/metodo-posicione-se'],
+                    ['Reset da Respiracao', '/metodo-posicione-se'],
+                    ['Manequim Mental Ideal', 'https://mindsetmagro.relacione-se.com']
+                  ].map(([item, href]) => (
+                    <a key={item} href={href} className="rounded-2xl border border-[#C9A04A]/18 bg-black/25 px-4 py-3 text-[#F7EFE3]/82 hover:bg-[#C9A04A]/10">
                       {item}
-                    </div>
+                    </a>
                   ))}
                 </div>
               </div>
@@ -133,9 +142,9 @@ export default function Page() {
             <p>
               Sua linguagem nasceu de uma investigacao real: sair do apagamento, entender a propria historia, liberar perdao sem confundir perdao com permissao, regular o corpo e transformar dor em discernimento.
             </p>
-            <p className="rounded-3xl border border-[#C9A04A]/20 bg-black/25 p-6 text-[#F1DCA7]">
-              Relacione-se significa: entenda-se, acesse seus recursos internos e pare de buscar fora a validacao que precisa reconstruir dentro.
-            </p>
+            <a href="/sobre" className="block rounded-3xl border border-[#C9A04A]/20 bg-black/25 p-6 text-[#F1DCA7] hover:bg-[#C9A04A]/10">
+              Ler a historia completa de Sol Lima
+            </a>
           </div>
         </div>
       </section>
@@ -146,10 +155,10 @@ export default function Page() {
           <h2 className="mt-4 max-w-4xl text-4xl font-black text-[#FFF8EA] sm:text-5xl">Uma estrutura para discernimento, presenca, vinculos conscientes e liberdade interna.</h2>
           <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
             {pillars.map((pillar) => (
-              <article key={pillar.title} className="rounded-[2rem] border border-[#C9A04A]/18 bg-[#13080A] p-6 shadow-xl shadow-black/20">
+              <a key={pillar.title} href={pillar.href} className="rounded-[2rem] border border-[#C9A04A]/18 bg-[#13080A] p-6 shadow-xl shadow-black/20 transition hover:-translate-y-1 hover:bg-[#1A0A0D]">
                 <h3 className="text-xl font-black text-[#F1DCA7]">{pillar.title}</h3>
                 <p className="mt-4 leading-7 text-[#F7EFE3]/70">{pillar.text}</p>
-              </article>
+              </a>
             ))}
           </div>
         </div>
@@ -191,6 +200,11 @@ export default function Page() {
 
       <footer className="border-t border-[#C9A04A]/15 px-6 py-10 text-center text-sm text-[#F7EFE3]/58">
         <p>Relacione-se — antes de relacionar-se, relacione-se.</p>
+        <div className="mt-4 flex justify-center gap-4">
+          <a href="/sobre" className="hover:text-[#C9A04A]">Sobre</a>
+          <a href="/arvore" className="hover:text-[#C9A04A]">Teste da Arvore</a>
+          <a href="/metodo-posicione-se" className="hover:text-[#C9A04A]">Metodo</a>
+        </div>
       </footer>
     </main>
   );

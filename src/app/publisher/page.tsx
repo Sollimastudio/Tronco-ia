@@ -50,6 +50,15 @@ function downloadBlob(blob: Blob, fileName: string) {
   URL.revokeObjectURL(url);
 }
 
+function escapeHtml(value: string) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export default function PublisherPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [stage, setStage] = useState<Stage>("idle");
@@ -170,7 +179,7 @@ export default function PublisherPage() {
 
     const source = fileInfo?.text || fileInfo?.preview || "Sem conteúdo extraído.";
     const title = projectName || fileInfo?.name || "Projeto editorial";
-    const text = `ARTEFATO EDITORIAL MVP\n\n${title}\n\nPROMESSA\nUm material editorial premium para ${audience}, com linguagem ${tone.toLowerCase()} e direção visual ${visualStyle.toLowerCase()}.\n\nESTRUTURA PROPOSTA\n\n1. Capa conceitual\nTítulo forte, subtítulo claro, selo editorial e assinatura Sol.IA Publisher.\n\n2. Carta de entrada\nUma abertura humana, direta e emocional para preparar o leitor.\n\n3. Mapa de travessia\nInfográfico textual com início, tensão, virada, prática e consolidação.\n\n4. Capítulos principais\nCada capítulo deve ter: ideia central, explicação, exemplo, exercício, síntese e frase-mestra.\n\n5. Recursos didáticos\n• Checklist de aplicação.\n• Mapa mental.\n• Quadro de erros comuns.\n• Página de reflexão.\n\n6. Fechamento\nSíntese, convite de continuidade e orientação de uso do material.\n\nBASE REAL EXTRAÍDA PARA A PRÓXIMA CAMADA\n${source.slice(0, 12000)}\n\nSTATUS\nEste artefato já usa o conteúdo extraído como base. A próxima evolução é transformar essa base em HTML/DOCX premium com capítulos completos, sem palavras grudadas e sem buracos de conteúdo.`;
+    const text = `ARTEFATO EDITORIAL MVP\n\n${title}\n\nPROMESSA\nUm material editorial premium para ${audience}, com linguagem ${tone.toLowerCase()} e direção visual ${visualStyle.toLowerCase()}.\n\nESTRUTURA PROPOSTA\n\n1. Capa conceitual\nTítulo forte, subtítulo claro, selo editorial e assinatura Sol.IA Publisher.\n\n2. Carta de entrada\nUma abertura humana, direta e emocional para preparar o leitor.\n\n3. Mapa de travessia\nInfográfico textual com início, tensão, virada, prática e consolidação.\n\n4. Capítulos principais\nCada capítulo deve ter: ideia central, explicação, exemplo, exercício, síntese e frase-mestra.\n\n5. Recursos didáticos\n• Checklist de aplicação.\n• Mapa mental.\n• Quadro de discernimento.\n• Página de reflexão.\n\n6. Fechamento\nSíntese, convite de continuidade e orientação de uso do material.\n\nBASE REAL EXTRAÍDA PARA A PRÓXIMA CAMADA\n${source.slice(0, 12000)}\n\nSTATUS\nEste artefato já usa o conteúdo extraído como base. A próxima evolução é transformar essa base em HTML/DOCX premium com capítulos completos, sem palavras grudadas e sem buracos de conteúdo.`;
 
     setArtifact(text);
     setStage("artifact");
@@ -188,18 +197,43 @@ export default function PublisherPage() {
     setStatus("TXT exportado com sucesso.");
   }
 
+  function buildPremiumHtml() {
+    const safeTitle = escapeHtml(projectName || "Sol.IA Publisher");
+    const safeAudience = escapeHtml(audience);
+    const result = escapeHtml(artifact || diagnostic);
+    const safeMemory = escapeHtml(JSON.stringify(memory, null, 2));
+
+    return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>${safeTitle}</title><style>@page{size:A4;margin:18mm}*{box-sizing:border-box}body{margin:0;background:#050505;color:#f5f0e8;font-family:Inter,Arial,sans-serif;line-height:1.75}main{max-width:980px;margin:40px auto;padding:48px;background:#13070a;border:1px solid rgba(201,168,76,.35);border-radius:28px}h1{font-size:48px;line-height:1.05;margin:0 0 18px}.kicker{color:#c9a84c;text-transform:uppercase;letter-spacing:.35em;font-size:12px}.card{background:#050505;border:1px solid rgba(201,168,76,.25);border-radius:20px;padding:24px;margin:24px 0;break-inside:avoid}pre{white-space:pre-wrap;font-family:inherit;font-size:16px}.gold{color:#c9a84c}.print-note{font-size:13px;color:#c9a84c}@media print{body{background:white;color:#111}main{border:0;margin:0;padding:0;background:white;color:#111}.kicker,.gold,.print-note{color:#8f6b2e}.card{border:1px solid #ddd;background:white;page-break-inside:avoid}}@media(max-width:700px){main{margin:0;border-radius:0;padding:28px}h1{font-size:34px}}</style></head><body><main><p class="kicker">Sol.IA Publisher</p><h1>${safeTitle}</h1><p class="gold">${safeAudience}</p><p class="print-note">Para PDF: use Imprimir → Salvar como PDF.</p><section class="card"><h2>Memória editorial</h2><pre>${safeMemory}</pre></section><section class="card"><h2>Resultado editorial</h2><pre>${result}</pre></section></main></body></html>`;
+  }
+
   function exportHtml() {
     if (!canExport) {
       setStatus("Gere o diagnóstico ou artefato antes de exportar HTML.");
       return;
     }
 
-    const safeTitle = projectName || "Sol.IA Publisher";
-    const result = artifact || diagnostic;
-    const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>${safeTitle}</title><style>body{margin:0;background:#050505;color:#f5f0e8;font-family:Inter,Arial,sans-serif;line-height:1.75}main{max-width:980px;margin:40px auto;padding:48px;background:#13070a;border:1px solid rgba(201,168,76,.35);border-radius:28px}h1{font-size:48px;line-height:1.05;margin:0 0 18px}.kicker{color:#c9a84c;text-transform:uppercase;letter-spacing:.35em;font-size:12px}.card{background:#050505;border:1px solid rgba(201,168,76,.25);border-radius:20px;padding:24px;margin:24px 0}pre{white-space:pre-wrap;font-family:inherit;font-size:16px}.gold{color:#c9a84c}@media(max-width:700px){main{margin:0;border-radius:0;padding:28px}h1{font-size:34px}}</style></head><body><main><p class="kicker">Sol.IA Publisher</p><h1>${safeTitle}</h1><p class="gold">${audience}</p><section class="card"><h2>Memória editorial</h2><pre>${JSON.stringify(memory, null, 2)}</pre></section><section class="card"><h2>Resultado editorial</h2><pre>${result}</pre></section></main></body></html>`;
-
-    downloadBlob(new Blob([html], { type: "text/html;charset=utf-8" }), `${slugify(projectName)}-publisher.html`);
+    downloadBlob(new Blob([buildPremiumHtml()], { type: "text/html;charset=utf-8" }), `${slugify(projectName)}-publisher.html`);
     setStatus("HTML exportado com sucesso.");
+  }
+
+  function exportPdf() {
+    if (!canExport) {
+      setStatus("Gere o diagnóstico ou artefato antes de exportar PDF.");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      setStatus("O navegador bloqueou a janela de PDF. Libere pop-ups para este site. Tecnologia fazendo charme, como sempre.");
+      return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(buildPremiumHtml());
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => printWindow.print(), 400);
+    setStatus("Prévia de PDF aberta. Na janela de impressão, escolha Salvar como PDF.");
   }
 
   async function exportDocx() {
@@ -218,7 +252,7 @@ export default function PublisherPage() {
           promise: "Transformar manuscrito bruto em produto editorial premium, claro e aplicável.",
           audience,
           tone,
-          finalFormats: ["DOCX", "HTML", "TXT"],
+          finalFormats: ["DOCX", "HTML", "TXT", "PDF"],
           sourceSummary: artifact || diagnostic,
           didacticAssets: ["Checklist de aplicação", "Mapa mental", "Quadro de discernimento", "Página de reflexão"]
         }
@@ -252,7 +286,7 @@ export default function PublisherPage() {
         <div className="mt-6 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
             <h1 className="max-w-4xl text-4xl font-black leading-tight md:text-6xl">Transforme seu manuscrito em um produto editorial premium.</h1>
-            <p className="mt-6 max-w-3xl text-base leading-8 text-[#F5F0E8]/70">MVP funcional com leitura real de TXT, Markdown, HTML, DOCX e PDF pesquisável, diagnóstico editorial, cofre e exportação TXT/HTML/DOCX.</p>
+            <p className="mt-6 max-w-3xl text-base leading-8 text-[#F5F0E8]/70">MVP funcional com leitura real de TXT, Markdown, HTML, DOCX e PDF pesquisável, diagnóstico editorial, cofre e exportação TXT/HTML/DOCX/PDF.</p>
           </div>
 
           <aside className="rounded-3xl border border-[#C9A84C]/20 bg-black/35 p-5">
@@ -293,6 +327,7 @@ export default function PublisherPage() {
           <button onClick={exportTxt} disabled={isBusy} className="rounded-full bg-[#F5F0E8] px-6 py-3 font-bold text-black transition hover:scale-[1.02] disabled:opacity-50">Exportar TXT</button>
           <button onClick={exportHtml} disabled={isBusy} className="rounded-full bg-[#C9A84C] px-6 py-3 font-bold text-black transition hover:scale-[1.02] disabled:opacity-50">Exportar HTML</button>
           <button onClick={exportDocx} disabled={isBusy} className="rounded-full bg-[#8F6B2E] px-6 py-3 font-bold text-white transition hover:scale-[1.02] disabled:opacity-50">Exportar DOCX</button>
+          <button onClick={exportPdf} disabled={isBusy} className="rounded-full border border-[#C9A84C]/70 px-6 py-3 font-bold text-[#F5F0E8] transition hover:bg-[#C9A84C] hover:text-black disabled:opacity-50">Exportar PDF</button>
         </div>
 
         <div className="mt-8 rounded-3xl border border-[#C9A84C]/20 bg-black/50 p-6">

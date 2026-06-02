@@ -33,7 +33,22 @@ const formatBytes = (size: number) => {
   return `${(kb / 1024).toFixed(2)} MB`;
 };
 
-const slugify = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "publisher";
+const slugify = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-|-$/g, "") || "publisher";
+
+function downloadBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function PublisherPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -48,12 +63,12 @@ export default function PublisherPage() {
   const [diagnostic, setDiagnostic] = useState("");
   const [artifact, setArtifact] = useState("");
 
-  const canDiagnose = Boolean(rawFile || fileInfo || projectName.trim());
+  const canDiagnose = Boolean(rawFile || projectName.trim());
   const canExport = Boolean(diagnostic || artifact);
   const isBusy = stage === "reading";
 
-  const memory = useMemo(() => {
-    return {
+  const memory = useMemo(
+    () => ({
       projectName,
       audience,
       tone,
@@ -72,8 +87,9 @@ export default function PublisherPage() {
               : stage === "diagnosed"
                 ? "aprovar artefato editorial"
                 : "exportar pacote"
-    };
-  }, [projectName, audience, tone, visualStyle, fileInfo, stage]);
+    }),
+    [projectName, audience, tone, visualStyle, fileInfo, stage]
+  );
 
   function openUpload() {
     fileInputRef.current?.click();
@@ -121,16 +137,10 @@ export default function PublisherPage() {
       formData.append("tone", tone);
       formData.append("visualStyle", visualStyle);
 
-      const response = await fetch("/api/publisher/read", {
-        method: "POST",
-        body: formData
-      });
-
+      const response = await fetch("/api/publisher/read", { method: "POST", body: formData });
       const data = (await response.json()) as ReaderResponse;
 
-      if (!response.ok) {
-        throw new Error(data.error || "Falha ao processar o arquivo.");
-      }
+      if (!response.ok) throw new Error(data.error || "Falha ao processar o arquivo.");
 
       setFileInfo({
         name: data.fileName,
@@ -173,23 +183,8 @@ export default function PublisherPage() {
       return;
     }
 
-    const content = [
-      "SOL.IA PUBLISHER",
-      "MEMÓRIA DO PROJETO",
-      JSON.stringify(memory, null, 2),
-      "",
-      diagnostic,
-      "",
-      artifact
-    ].join("\n\n");
-
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${slugify(projectName)}-publisher.txt`;
-    link.click();
-    URL.revokeObjectURL(url);
+    const content = ["SOL.IA PUBLISHER", "MEMÓRIA DO PROJETO", JSON.stringify(memory, null, 2), "", diagnostic, "", artifact].join("\n\n");
+    downloadBlob(new Blob([content], { type: "text/plain;charset=utf-8" }), `${slugify(projectName)}-publisher.txt`);
     setStatus("TXT exportado com sucesso.");
   }
 
@@ -201,35 +196,52 @@ export default function PublisherPage() {
 
     const safeTitle = projectName || "Sol.IA Publisher";
     const result = artifact || diagnostic;
-    const html = `<!doctype html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${safeTitle}</title>
-<style>
-body{margin:0;background:#050505;color:#f5f0e8;font-family:Inter,Arial,sans-serif;line-height:1.75}main{max-width:980px;margin:40px auto;padding:48px;background:#13070a;border:1px solid rgba(201,168,76,.35);border-radius:28px}h1{font-size:48px;line-height:1.05;margin:0 0 18px}.kicker{color:#c9a84c;text-transform:uppercase;letter-spacing:.35em;font-size:12px}.card{background:#050505;border:1px solid rgba(201,168,76,.25);border-radius:20px;padding:24px;margin:24px 0}pre{white-space:pre-wrap;font-family:inherit;font-size:16px}.gold{color:#c9a84c}@media(max-width:700px){main{margin:0;border-radius:0;padding:28px}h1{font-size:34px}}
-</style>
-</head>
-<body>
-<main>
-<p class="kicker">Sol.IA Publisher</p>
-<h1>${safeTitle}</h1>
-<p class="gold">${audience}</p>
-<section class="card"><h2>Memória editorial</h2><pre>${JSON.stringify(memory, null, 2)}</pre></section>
-<section class="card"><h2>Resultado editorial</h2><pre>${result}</pre></section>
-</main>
-</body>
-</html>`;
+    const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>${safeTitle}</title><style>body{margin:0;background:#050505;color:#f5f0e8;font-family:Inter,Arial,sans-serif;line-height:1.75}main{max-width:980px;margin:40px auto;padding:48px;background:#13070a;border:1px solid rgba(201,168,76,.35);border-radius:28px}h1{font-size:48px;line-height:1.05;margin:0 0 18px}.kicker{color:#c9a84c;text-transform:uppercase;letter-spacing:.35em;font-size:12px}.card{background:#050505;border:1px solid rgba(201,168,76,.25);border-radius:20px;padding:24px;margin:24px 0}pre{white-space:pre-wrap;font-family:inherit;font-size:16px}.gold{color:#c9a84c}@media(max-width:700px){main{margin:0;border-radius:0;padding:28px}h1{font-size:34px}}</style></head><body><main><p class="kicker">Sol.IA Publisher</p><h1>${safeTitle}</h1><p class="gold">${audience}</p><section class="card"><h2>Memória editorial</h2><pre>${JSON.stringify(memory, null, 2)}</pre></section><section class="card"><h2>Resultado editorial</h2><pre>${result}</pre></section></main></body></html>`;
 
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${slugify(projectName)}-publisher.html`;
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(new Blob([html], { type: "text/html;charset=utf-8" }), `${slugify(projectName)}-publisher.html`);
     setStatus("HTML exportado com sucesso.");
+  }
+
+  async function exportDocx() {
+    if (!canExport) {
+      setStatus("Gere o diagnóstico ou artefato antes de exportar DOCX.");
+      return;
+    }
+
+    setStatus("Gerando DOCX editável. Segura a taça que agora vai Word de verdade.");
+
+    try {
+      const payload = {
+        artifact: {
+          productTitle: projectName || "Sol.IA Publisher",
+          visualStyle,
+          promise: "Transformar manuscrito bruto em produto editorial premium, claro e aplicável.",
+          audience,
+          tone,
+          finalFormats: ["DOCX", "HTML", "TXT"],
+          sourceSummary: artifact || diagnostic,
+          didacticAssets: ["Checklist de aplicação", "Mapa mental", "Quadro de discernimento", "Página de reflexão"]
+        }
+      };
+
+      const response = await fetch("/api/publisher/docx", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.detail || data?.error || "Falha ao gerar DOCX.");
+      }
+
+      const blob = await response.blob();
+      downloadBlob(blob, `${slugify(projectName)}-editavel.docx`);
+      setStatus("DOCX exportado com sucesso.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro desconhecido.";
+      setStatus(`Não consegui exportar DOCX: ${message}`);
+    }
   }
 
   return (
@@ -239,12 +251,8 @@ body{margin:0;background:#050505;color:#f5f0e8;font-family:Inter,Arial,sans-seri
 
         <div className="mt-6 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
-            <h1 className="max-w-4xl text-4xl font-black leading-tight md:text-6xl">
-              Transforme seu manuscrito em um produto editorial premium.
-            </h1>
-            <p className="mt-6 max-w-3xl text-base leading-8 text-[#F5F0E8]/70">
-              MVP funcional com leitura real de TXT, Markdown, HTML, DOCX e PDF pesquisável, diagnóstico editorial, cofre e exportação.
-            </p>
+            <h1 className="max-w-4xl text-4xl font-black leading-tight md:text-6xl">Transforme seu manuscrito em um produto editorial premium.</h1>
+            <p className="mt-6 max-w-3xl text-base leading-8 text-[#F5F0E8]/70">MVP funcional com leitura real de TXT, Markdown, HTML, DOCX e PDF pesquisável, diagnóstico editorial, cofre e exportação TXT/HTML/DOCX.</p>
           </div>
 
           <aside className="rounded-3xl border border-[#C9A84C]/20 bg-black/35 p-5">
@@ -284,6 +292,7 @@ body{margin:0;background:#050505;color:#f5f0e8;font-family:Inter,Arial,sans-seri
           <button onClick={approveArtifact} disabled={isBusy} className="rounded-full border border-[#F5F0E8]/35 px-6 py-3 font-bold text-[#F5F0E8] transition hover:bg-[#F5F0E8] hover:text-black disabled:opacity-50">Aprovar artefato</button>
           <button onClick={exportTxt} disabled={isBusy} className="rounded-full bg-[#F5F0E8] px-6 py-3 font-bold text-black transition hover:scale-[1.02] disabled:opacity-50">Exportar TXT</button>
           <button onClick={exportHtml} disabled={isBusy} className="rounded-full bg-[#C9A84C] px-6 py-3 font-bold text-black transition hover:scale-[1.02] disabled:opacity-50">Exportar HTML</button>
+          <button onClick={exportDocx} disabled={isBusy} className="rounded-full bg-[#8F6B2E] px-6 py-3 font-bold text-white transition hover:scale-[1.02] disabled:opacity-50">Exportar DOCX</button>
         </div>
 
         <div className="mt-8 rounded-3xl border border-[#C9A84C]/20 bg-black/50 p-6">
